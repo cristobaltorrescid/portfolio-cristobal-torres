@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Portafolio | Cristóbal Torres</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #111;
+      color: #f5f5f5;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      padding: 12px 20px;
+      background: #111;
+      border-bottom: 1px solid #222;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header .title {
+      font-size: 14px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      opacity: 0.85;
+    }
+    header .meta {
+      font-size: 12px;
+      opacity: 0.7;
+    }
+    main {
+      flex: 1;
+      display: flex;
+      padding: 0;
+    }
+    .viewer {
+      flex: 1;
+      display: flex;
+    }
+    .viewer iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #1a1a1a;
+    }
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="title">Portafolio | Cristóbal Torres</div>
+    <div class="meta">PDF viewer limpio · Sin publicidad · portfolio-cristobal-torres.pdf</div>
+  </header>
+  <main>
+    <div class="viewer">
+      <iframe src="portfolio-cristobal-torres.pdf#view=FitH"></iframe>
+    </div>
+  </main>
+</body>
+</html>
