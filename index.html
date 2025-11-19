@@ -1,74 +1,242 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Portafolio | Cristóbal Torres</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-    body {
-      background: #111;
-      color: #f5f5f5;
+    html, body {
+      height: 100%;
+      background: #050505;
+      overflow: hidden;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
+      color: #f5f5f5;
     }
-    header {
-      padding: 12px 20px;
+    .book-wrapper {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at top, #222 0, #050505 55%);
+    }
+    .book {
+      position: relative;
+      width: min(90vw, 1400px);
+      height: min(90vh, 900px);
+      perspective: 2500px;
+    }
+    .page {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 50%;
       background: #111;
-      border-bottom: 1px solid #222;
+      transform-origin: left center;
+      transform-style: preserve-3d;
+      transition: transform 0.7s ease, box-shadow 0.7s ease;
+      box-shadow: 0 0 40px rgba(0,0,0,0.7);
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .page img {
+      width: 200%;
+      height: 100%;
+      object-fit: contain;
+      background: #111;
+    }
+    .page.left img {
+      transform: translateX(-50%);
+    }
+    .page.right {
+      left: 50%;
+      transform-origin: right center;
+    }
+    .page.right img {
+      transform: translateX(0);
+    }
+    .page.turned {
+      transform: rotateY(-180deg);
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+    .controls {
+      position: fixed;
+      inset: 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      pointer-events: none;
     }
-    header .title {
-      font-size: 14px;
+    .ctrl-btn {
+      pointer-events: auto;
+      width: 60px;
+      height: 60px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(0,0,0,0.35);
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 36px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s, border-color 0.2s;
+    }
+    .ctrl-btn span {
+      font-size: 26px;
+      line-height: 1;
+      opacity: 0.8;
+    }
+    .ctrl-btn:hover {
+      background: rgba(255,255,255,0.08);
+      transform: translateY(-1px);
+      border-color: rgba(255,255,255,0.4);
+    }
+    .top-bar {
+      position: fixed;
+      top: 12px;
+      left: 18px;
+      right: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      opacity: 0.85;
-    }
-    header .meta {
-      font-size: 12px;
       opacity: 0.7;
+      pointer-events: none;
     }
-    main {
-      flex: 1;
-      display: flex;
-      padding: 0;
-    }
-    .viewer {
-      flex: 1;
-      display: flex;
-    }
-    .viewer iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      background: #1a1a1a;
+    .top-bar > div { pointer-events: auto; }
+    .page-indicator {
+      font-feature-settings: "tnum" 1, "lnum" 1;
     }
     @media (max-width: 768px) {
-      header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 4px;
+      .book {
+        width: min(100vw, 700px);
+        height: min(100vh, 900px);
+      }
+      .page {
+        width: 100%;
+      }
+      .page.left {
+        display: none;
+      }
+      .page.right {
+        left: 0;
+        transform-origin: left center;
       }
     }
   </style>
 </head>
 <body>
-  <header>
-    <div class="title">Portafolio | Cristóbal Torres</div>
-    <div class="meta">PDF viewer limpio · Sin publicidad · portfolio-cristobal-torres.pdf</div>
-  </header>
-  <main>
-    <div class="viewer">
-      <iframe src="portfolio-cristobal-torres.pdf#view=FitH"></iframe>
-    </div>
-  </main>
+  <div class="top-bar">
+    <div>PORTAFOLIO · CRISTÓBAL TORRES</div>
+    <div class="page-indicator" id="pageIndicator">PÁGINA 1</div>
+  </div>
+
+  <div class="book-wrapper">
+    <div class="book" id="book"></div>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl-btn" id="prevBtn" aria-label="Página anterior">
+      <span>‹</span>
+    </button>
+    <button class="ctrl-btn" id="nextBtn" aria-label="Página siguiente">
+      <span>›</span>
+    </button>
+  </div>
+
+  <script>
+    // TOTAL DE PÁGINAS DEL PORTAFOLIO
+    const TOTAL_PAGES = 34;
+
+    // Ruta de cada imagen de página
+    function pageSrc(pageNumber) {
+      const n = String(pageNumber).padStart(2, "0");
+      return `pages/page-${n}.jpg`;
+    }
+
+    const book = document.getElementById("book");
+    const indicator = document.getElementById("pageIndicator");
+    let currentPage = 1;
+
+    // Crear páginas
+    for (let i = 1; i <= TOTAL_PAGES; i++) {
+      const page = document.createElement("div");
+      page.classList.add("page");
+      page.dataset.page = i;
+
+      const img = document.createElement("img");
+      img.src = pageSrc(i);
+      img.alt = `Página ${i}`;
+
+      page.appendChild(img);
+      book.appendChild(page);
+    }
+
+    function layoutPages() {
+      const pages = Array.from(document.querySelectorAll(".page"));
+      const isMobile = window.matchMedia("(max-width: 768px)").matches;
+
+      pages.forEach(page => {
+        const n = parseInt(page.dataset.page, 10);
+        page.classList.remove("left", "right");
+
+        if (isMobile) {
+          page.style.zIndex = TOTAL_PAGES - n;
+          page.style.left = "0";
+          page.classList.add("right");
+        } else {
+          if (n % 2 === 1) {
+            page.classList.add("left");
+            page.style.left = "0";
+          } else {
+            page.classList.add("right");
+            page.style.left = "50%";
+          }
+          page.style.zIndex = TOTAL_PAGES - n;
+        }
+      });
+    }
+
+    function updateIndicator() {
+      indicator.textContent = `PÁGINA ${currentPage}`;
+    }
+
+    function turnNext() {
+      if (currentPage >= TOTAL_PAGES) return;
+      const pages = Array.from(document.querySelectorAll(".page"));
+      const target = pages.find(p => parseInt(p.dataset.page,10) === currentPage);
+      if (target) {
+        target.classList.add("turned");
+        currentPage = Math.min(currentPage + 1, TOTAL_PAGES);
+        updateIndicator();
+      }
+    }
+
+    function turnPrev() {
+      if (currentPage <= 1) return;
+      const pages = Array.from(document.querySelectorAll(".page"));
+      const target = pages.find(p => parseInt(p.dataset.page,10) === currentPage - 1);
+      if (target) {
+        target.classList.remove("turned");
+        currentPage = Math.max(currentPage - 1, 1);
+        updateIndicator();
+      }
+    }
+
+    document.getElementById("nextBtn").addEventListener("click", turnNext);
+    document.getElementById("prevBtn").addEventListener("click", turnPrev);
+    window.addEventListener("resize", layoutPages);
+
+    layoutPages();
+    updateIndicator();
+  </script>
 </body>
 </html>
