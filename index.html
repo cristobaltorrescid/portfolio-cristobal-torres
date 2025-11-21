@@ -50,6 +50,7 @@
       align-items: center;
       justify-content: center;
       background: radial-gradient(circle at top, #222 0, #050505 60%);
+      overflow: auto; /* necesario para desplazarse cuando hay zoom */
     }
 
     /* Contenedor que usa la librería para el flipbook */
@@ -60,21 +61,30 @@
       border-radius: 4px;
       overflow: hidden;
       background: #050505;
+      transition: transform 0.15s ease-out;
     }
 
-    /* Ajustes finos del “libro” */
+    /* Ajustes finos internos del libro */
+
+    /* Fondo del libro igual al fondo global para que desaparezcan barras raras */
     .stf__wrapper {
-      background: #050505;
+      background: #050505 !important;
+      padding: 0 !important;
     }
 
-    /* páginas muy juntas: separación visual pequeña (~5px) */
+    /* Quitar márgenes entre páginas: que queden lo más juntas posible */
     .stf__item {
-      margin: 0 2.5px;
+      margin: 0 !important;
     }
 
-    /* “lomo” central con sombra casi transparente */
+    /* Quitar borde/sombra dura de cada página (dejamos solo la del “lomo”) */
+    .stf__page {
+      box-shadow: none !important;
+    }
+
+    /* “Lomo” con sombra casi transparente (D1) */
     .stf__inner-shadow {
-      opacity: 0.05; /* casi transparente, como pediste */
+      opacity: 0.05 !important; /* casi transparente */
     }
 
     .controls {
@@ -166,6 +176,7 @@
       const nextBtn = document.getElementById("nextBtn");
 
       const flipbookElement = document.getElementById("flipbook");
+      const wrapper = document.querySelector(".viewer-wrapper");
 
       // Crear instancia de PageFlip
       const pageFlip = new St.PageFlip(flipbookElement, {
@@ -222,8 +233,27 @@
           pageFlip.flipPrev();
         }
       });
+
+      // ----------------------
+      // ZOOM con la ruedita
+      // ----------------------
+      let scale = 1;
+
+      wrapper.addEventListener(
+        "wheel",
+        (e) => {
+          // Usamos SIEMPRE la ruedita para zoom (sin Ctrl)
+          e.preventDefault();
+
+          const delta = e.deltaY > 0 ? -0.1 : 0.1;
+          scale = Math.min(2.5, Math.max(1, scale + delta));
+
+          flipbookElement.style.transform = `scale(${scale})`;
+          flipbookElement.style.transformOrigin = "center center";
+        },
+        { passive: false }
+      );
     });
   </script>
 </body>
 </html>
-
