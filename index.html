@@ -5,6 +5,12 @@
   <title>Portafolio | Cristóbal Torres</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+  <!-- Estilos de la librería de flipbook 3D -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/page-flip@2.0.7/dist/css/page-flip.min.css"
+  />
+
   <style>
     * {
       margin: 0;
@@ -46,54 +52,29 @@
       background: radial-gradient(circle at top, #222 0, #050505 60%);
     }
 
-    .book-frame {
+    /* Contenedor que usa la librería para el flipbook */
+    #flipbook {
       width: min(95vw, 1400px);
       height: min(90vh, 900px);
       box-shadow: 0 0 40px rgba(0, 0, 0, 0.85);
       border-radius: 4px;
       overflow: hidden;
       background: #050505;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
     }
 
-    .page-view {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: opacity 0.25s ease, transform 0.25s ease;
-      opacity: 1;
+    /* Ajustes finos del “libro” */
+    .stf__wrapper {
+      background: #050505;
     }
 
-    .page-view.hidden {
-      opacity: 0;
-      transform: translateX(-20px);
-      pointer-events: none;
+    /* páginas muy juntas: separación visual pequeña (~5px) */
+    .stf__item {
+      margin: 0 2.5px;
     }
 
-    .single-page {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-    }
-
-    .spread {
-      display: flex;
-      height: 100%;
-      align-items: center;
-      justify-content: center;
-      gap: 5px; /* separación entre páginas ~5px */
-    }
-
-    .spread img {
-      max-width: 50%;
-      max-height: 100%;
-      object-fit: contain;
-      background: #fff;
+    /* “lomo” central con sombra casi transparente */
+    .stf__inner-shadow {
+      opacity: 0.05; /* casi transparente, como pediste */
     }
 
     .controls {
@@ -141,19 +122,11 @@
     }
 
     @media (max-width: 768px) {
-      .book-frame {
+      #flipbook {
         width: 100vw;
         height: 100vh;
         box-shadow: none;
         border-radius: 0;
-      }
-
-      .spread img {
-        max-width: 100%;
-      }
-
-      .spread {
-        gap: 2px;
       }
 
       .ctrl-btn {
@@ -169,9 +142,7 @@
   </div>
 
   <div class="viewer-wrapper">
-    <div class="book-frame">
-      <div class="page-view" id="pageView"></div>
-    </div>
+    <div id="flipbook"></div>
   </div>
 
   <div class="controls">
@@ -183,121 +154,77 @@
     </button>
   </div>
 
+  <!-- Script de la librería de flipbook 3D -->
+  <script src="https://unpkg.com/page-flip@2.0.7/dist/js/page-flip.browser.min.js"></script>
+
   <script>
     document.addEventListener("DOMContentLoaded", function () {
-      const TOTAL_PAGES = 34; // cambia esto si tu portafolio tiene otro número
+      const TOTAL_PAGES = 34; // si cambias el portafolio, modifica aquí
 
-      const pageView = document.getElementById("pageView");
       const indicator = document.getElementById("pageIndicator");
       const prevBtn = document.getElementById("prevBtn");
       const nextBtn = document.getElementById("nextBtn");
 
-      // Estructura:
-      //  - 0: portada (página 1)
-      //  - 1: páginas 2–3
-      //  - 2: páginas 4–5
-      //  - ...
-      const views = [];
+      const flipbookElement = document.getElementById("flipbook");
 
-      // Portada
-      views.push({ type: "single", pages: [1] });
+      // Crear instancia de PageFlip
+      const pageFlip = new St.PageFlip(flipbookElement, {
+        width: 900, // tamaño base, luego se adapta
+        height: 600,
+        size: "stretch", // se ajusta al contenedor
+        minWidth: 315,
+        maxWidth: 2000,
+        minHeight: 420,
+        maxHeight: 2533,
+        autoSize: true,
+        showCover: true, // portada sola
+        maxShadowOpacity: 0.15, // sombra general suave
+        mobileScrollSupport: false // evita scroll accidental en móvil
+      });
 
-      // Spreads interiores
-      for (let p = 2; p <= TOTAL_PAGES; p += 2) {
-        if (p + 1 <= TOTAL_PAGES) {
-          views.push({ type: "spread", pages: [p, p + 1] });
-        } else {
-          // Si el total es impar, última página sola
-          views.push({ type: "single", pages: [p] });
-        }
+      // Generar automáticamente el listado de imágenes
+      const images = [];
+      for (let i = 1; i <= TOTAL_PAGES; i++) {
+        const num = String(i).padStart(2, "0");
+        images.push(`pages/page-${num}.jpg`);
       }
 
-      let currentViewIndex = 0;
+      pageFlip.loadFromImages(images);
 
-      function pagePath(pageNumber) {
-        const num = String(pageNumber).padStart(2, "0");
-        return `pages/page-${num}.jpg`;
+      function updateIndicator() {
+        // Índice interno desde 0
+        const pageIndex = pageFlip.getCurrentPageIndex();
+        const humanPage = pageIndex + 1;
+        indicator.textContent = `PÁGINA ${humanPage} / ${TOTAL_PAGES}`;
+
+        // Habilitar / deshabilitar botones según posición
+        prevBtn.disabled = pageIndex === 0;
+        nextBtn.disabled = humanPage >= TOTAL_PAGES;
       }
 
-      function renderView(index, direction = 0) {
-        const view = views[index];
-        if (!view) return;
+      pageFlip.on("init", updateIndicator);
+      pageFlip.on("flip", updateIndicator);
 
-        // Animación simple: fade + slide
-        pageView.classList.add("hidden");
-
-        setTimeout(() => {
-          pageView.innerHTML = "";
-
-          if (view.type === "single") {
-            const img = document.createElement("img");
-            img.className = "single-page";
-            img.src = pagePath(view.pages[0]);
-            img.alt = `Página ${view.pages[0]}`;
-            pageView.appendChild(img);
-          } else if (view.type === "spread") {
-            const spread = document.createElement("div");
-            spread.className = "spread";
-
-            view.pages.forEach((p) => {
-              const img = document.createElement("img");
-              img.src = pagePath(p);
-              img.alt = `Página ${p}`;
-              spread.appendChild(img);
-            });
-
-            pageView.appendChild(spread);
-          }
-
-          // Actualizar indicador de páginas
-          if (view.type === "single") {
-            indicator.textContent = `PÁGINA ${view.pages[0]} / ${TOTAL_PAGES}`;
-          } else {
-            indicator.textContent = `PÁGINAS ${view.pages[0]}–${view.pages[1]} / ${TOTAL_PAGES}`;
-          }
-
-          // Actualizar botones
-          prevBtn.disabled = index === 0;
-          nextBtn.disabled = index === views.length - 1;
-
-          // Ajuste de dirección en la animación
-          pageView.style.transform =
-            direction > 0 ? "translateX(20px)" : direction < 0 ? "translateX(-20px)" : "translateX(0)";
-          // Reaparecer
-          requestAnimationFrame(() => {
-            pageView.classList.remove("hidden");
-            pageView.style.transform = "translateX(0)";
-          });
-        }, 200);
-      }
-
+      // Botones
       prevBtn.addEventListener("click", () => {
-        if (currentViewIndex > 0) {
-          currentViewIndex -= 1;
-          renderView(currentViewIndex, -1);
-        }
+        pageFlip.flipPrev();
       });
 
       nextBtn.addEventListener("click", () => {
-        if (currentViewIndex < views.length - 1) {
-          currentViewIndex += 1;
-          renderView(currentViewIndex, 1);
-        }
+        pageFlip.flipNext();
       });
 
       // Navegación con teclado
       window.addEventListener("keydown", (e) => {
         if (e.key === "ArrowRight") {
-          nextBtn.click();
+          pageFlip.flipNext();
         } else if (e.key === "ArrowLeft") {
-          prevBtn.click();
+          pageFlip.flipPrev();
         }
       });
-
-      // Render inicial
-      renderView(currentViewIndex);
     });
   </script>
 </body>
 </html>
+
 
