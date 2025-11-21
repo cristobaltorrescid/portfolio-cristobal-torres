@@ -5,41 +5,31 @@
   <title>Portafolio | Cristóbal Torres</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Estilos de la librería de flipbook 3D -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/page-flip@2.0.7/dist/css/page-flip.min.css"
-  />
-
+  <!-- PageFlip 3D -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/css/page-flip.min.css" />
+  
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-    html,
-    body {
+    html, body {
       height: 100%;
       background: #050505;
       overflow: hidden;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-        sans-serif;
-      color: #f5f5f5;
+      font-family: system-ui, sans-serif;
+      color: #eee;
     }
 
     .top-bar {
       position: fixed;
-      top: 10px;
-      left: 18px;
-      right: 18px;
+      top: 12px;
+      left: 20px;
+      right: 20px;
       display: flex;
       justify-content: space-between;
       font-size: 12px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      opacity: 0.75;
-      z-index: 20;
+      letter-spacing: .15em;
+      opacity: .8;
+      z-index: 50;
       pointer-events: none;
     }
 
@@ -49,34 +39,30 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: radial-gradient(circle at top, #222 0, #050505 60%);
     }
 
-    /* Contenedor que usa la librería para el flipbook */
+    /* Contenedor del libro */
     #flipbook {
-      width: min(95vw, 1400px);
+      width: min(95vw, 1500px);
       height: min(90vh, 900px);
-      box-shadow: 0 0 40px rgba(0, 0, 0, 0.85);
+      background: #050505;
+      box-shadow: 0 0 40px rgba(0,0,0,.75);
       border-radius: 4px;
       overflow: hidden;
-      background: #050505;
     }
 
-    /* Ajustes finos del “libro” */
-    .stf__wrapper {
-      background: #050505;
-    }
+    /* Fondo interno del libro */
+    .stf__wrapper { background: #050505 !important; }
 
-    /* páginas muy juntas: separación visual pequeña (~5px) */
-    .stf__item {
-      margin: 0 2.5px;
-    }
+    /* Páginas muy juntas (separación 5px total → 2.5px por lado) */
+    .stf__item { margin: 0 2.5px !important; }
 
-    /* “lomo” central con sombra casi transparente */
+    /* Lomo del libro: casi transparente */
     .stf__inner-shadow {
-      opacity: 0.05; /* casi transparente, como pediste */
+      opacity: 0.03 !important;
     }
 
+    /* Botones */
     .controls {
       position: fixed;
       inset: 0;
@@ -84,58 +70,42 @@
       align-items: center;
       justify-content: space-between;
       pointer-events: none;
-      z-index: 30;
+      z-index: 40;
     }
 
     .ctrl-btn {
-      pointer-events: auto;
-      width: 52px;
-      height: 52px;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      background: rgba(0, 0, 0, 0.55);
+      width: 55px;
+      height: 55px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(255,255,255,.25);
       backdrop-filter: blur(10px);
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 36px;
+      margin: 0 40px;
+      pointer-events: auto;
       cursor: pointer;
-      transition: background 0.2s, transform 0.2s, border-color 0.2s;
+      transition: .2s;
+    }
+
+    .ctrl-btn:hover {
+      background: rgba(255,255,255,.15);
+      border-color: rgba(255,255,255,.45);
+      transform: translateY(-2px);
     }
 
     .ctrl-btn span {
       font-size: 26px;
-      line-height: 1;
-      opacity: 0.85;
+      color: white;
+      opacity: .85;
     }
 
-    .ctrl-btn:hover:not(:disabled) {
-      background: rgba(255, 255, 255, 0.1);
-      transform: translateY(-1px);
-      border-color: rgba(255, 255, 255, 0.45);
-    }
-
-    .ctrl-btn:disabled {
-      opacity: 0.3;
-      cursor: default;
-      transform: none;
-    }
-
-    @media (max-width: 768px) {
-      #flipbook {
-        width: 100vw;
-        height: 100vh;
-        box-shadow: none;
-        border-radius: 0;
-      }
-
-      .ctrl-btn {
-        margin: 0 10px;
-      }
-    }
   </style>
 </head>
+
 <body>
+
   <div class="top-bar">
     <div>PORTAFOLIO · CRISTÓBAL TORRES</div>
     <div id="pageIndicator">PÁGINA 1 / 34</div>
@@ -146,85 +116,56 @@
   </div>
 
   <div class="controls">
-    <button class="ctrl-btn" id="prevBtn" aria-label="Anterior">
-      <span>‹</span>
-    </button>
-    <button class="ctrl-btn" id="nextBtn" aria-label="Siguiente">
-      <span>›</span>
-    </button>
+    <button class="ctrl-btn" id="prevBtn"><span>‹</span></button>
+    <button class="ctrl-btn" id="nextBtn"><span>›</span></button>
   </div>
 
-  <!-- Script de la librería de flipbook 3D -->
-  <script src="https://unpkg.com/page-flip@2.0.7/dist/js/page-flip.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.min.js"></script>
 
   <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const TOTAL_PAGES = 34; // si cambias el portafolio, modifica aquí
+    document.addEventListener("DOMContentLoaded", () => {
 
+      const TOTAL = 34;
       const indicator = document.getElementById("pageIndicator");
-      const prevBtn = document.getElementById("prevBtn");
-      const nextBtn = document.getElementById("nextBtn");
 
-      const flipbookElement = document.getElementById("flipbook");
-
-      // Crear instancia de PageFlip
-      const pageFlip = new St.PageFlip(flipbookElement, {
-        width: 900, // tamaño base, luego se adapta
+      const flip = new St.PageFlip(document.getElementById("flipbook"), {
+        width: 900,
         height: 600,
-        size: "stretch", // se ajusta al contenedor
-        minWidth: 315,
-        maxWidth: 2000,
-        minHeight: 420,
-        maxHeight: 2533,
+        size: "stretch",
+        maxShadowOpacity: 0.1,
+        showCover: true,
         autoSize: true,
-        showCover: true, // portada sola
-        maxShadowOpacity: 0.15, // sombra general suave
-        mobileScrollSupport: false // evita scroll accidental en móvil
+        mobileScrollSupport: false
       });
 
-      // Generar automáticamente el listado de imágenes
+      // Cargar imágenes
       const images = [];
-      for (let i = 1; i <= TOTAL_PAGES; i++) {
-        const num = String(i).padStart(2, "0");
-        images.push(`pages/page-${num}.jpg`);
+      for (let i = 1; i <= TOTAL; i++) {
+        images.push(`pages/page-${String(i).padStart(2,"0")}.jpg`);
       }
 
-      pageFlip.loadFromImages(images);
+      flip.loadFromImages(images);
 
-      function updateIndicator() {
-        // Índice interno desde 0
-        const pageIndex = pageFlip.getCurrentPageIndex();
-        const humanPage = pageIndex + 1;
-        indicator.textContent = `PÁGINA ${humanPage} / ${TOTAL_PAGES}`;
-
-        // Habilitar / deshabilitar botones según posición
-        prevBtn.disabled = pageIndex === 0;
-        nextBtn.disabled = humanPage >= TOTAL_PAGES;
+      function update() {
+        let i = flip.getCurrentPageIndex() + 1;
+        indicator.textContent = `PÁGINA ${i} / ${TOTAL}`;
       }
 
-      pageFlip.on("init", updateIndicator);
-      pageFlip.on("flip", updateIndicator);
+      flip.on("flip", update);
+      flip.on("init", update);
 
       // Botones
-      prevBtn.addEventListener("click", () => {
-        pageFlip.flipPrev();
+      document.getElementById("prevBtn").onclick = () => flip.flipPrev();
+      document.getElementById("nextBtn").onclick = () => flip.flipNext();
+
+      // Teclado
+      window.addEventListener("keydown", e => {
+        if (e.key === "ArrowRight") flip.flipNext();
+        if (e.key === "ArrowLeft") flip.flipPrev();
       });
 
-      nextBtn.addEventListener("click", () => {
-        pageFlip.flipNext();
-      });
-
-      // Navegación con teclado
-      window.addEventListener("keydown", (e) => {
-        if (e.key === "ArrowRight") {
-          pageFlip.flipNext();
-        } else if (e.key === "ArrowLeft") {
-          pageFlip.flipPrev();
-        }
-      });
     });
   </script>
+
 </body>
 </html>
-
-
