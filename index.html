@@ -5,11 +5,7 @@
   <title>Portafolio | Cristóbal Torres</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
       height: 100%;
       background: #050505;
@@ -17,6 +13,7 @@
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: #f5f5f5;
     }
+
     .top-bar {
       position: fixed;
       top: 10px;
@@ -28,9 +25,10 @@
       letter-spacing: 0.12em;
       text-transform: uppercase;
       opacity: 0.7;
-      pointer-events: none;
       z-index: 10;
+      pointer-events: none;
     }
+
     .viewer-wrapper {
       position: fixed;
       inset: 0;
@@ -39,23 +37,33 @@
       justify-content: center;
       background: radial-gradient(circle at top, #222 0, #050505 55%);
     }
-    .page-frame {
-      width: min(90vw, 1200px);
+
+    .spread-frame {
+      width: min(95vw, 1400px);
       height: min(90vh, 900px);
-      background: #101010;
-      box-shadow: 0 0 40px rgba(0,0,0,0.8);
+      background: #050505;
+      box-shadow: 0 0 40px rgba(0,0,0,0.9);
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 0;
       overflow: hidden;
       position: relative;
     }
-    .page-frame img {
-      max-width: 100%;
+
+    .page-img {
+      flex: 1;
       max-height: 100%;
+      max-width: 50%;
       object-fit: contain;
+      background: #111;
       transition: opacity 0.25s ease;
     }
+
+    .page-img.single {
+      max-width: 100%;
+    }
+
     .controls {
       position: fixed;
       inset: 0;
@@ -64,13 +72,14 @@
       justify-content: space-between;
       pointer-events: none;
     }
+
     .ctrl-btn {
       pointer-events: auto;
       width: 52px;
       height: 52px;
       border-radius: 999px;
       border: 1px solid rgba(255,255,255,0.25);
-      background: rgba(0,0,0,0.5);
+      background: rgba(0,0,0,0.55);
       backdrop-filter: blur(10px);
       display: flex;
       align-items: center;
@@ -79,30 +88,32 @@
       cursor: pointer;
       transition: background 0.2s, transform 0.2s, border-color 0.2s;
     }
+
     .ctrl-btn span {
       font-size: 26px;
       line-height: 1;
       opacity: 0.85;
     }
-    .ctrl-btn:hover {
+
+    .ctrl-btn:hover:not(:disabled) {
       background: rgba(255,255,255,0.1);
       transform: translateY(-1px);
       border-color: rgba(255,255,255,0.45);
     }
+
     .ctrl-btn:disabled {
       opacity: 0.3;
       cursor: default;
       transform: none;
     }
+
     @media (max-width: 768px) {
-      .page-frame {
+      .spread-frame {
         width: 100vw;
         height: 100vh;
-        border-radius: 0;
+        box-shadow: none;
       }
-      .ctrl-btn {
-        margin: 0 10px;
-      }
+      .ctrl-btn { margin: 0 10px; }
     }
   </style>
 </head>
@@ -113,26 +124,32 @@
   </div>
 
   <div class="viewer-wrapper">
-    <div class="page-frame">
-      <img id="pageImage" src="" alt="Página del portafolio" />
+    <div class="spread-frame">
+      <img id="leftPage"  class="page-img" />
+      <img id="rightPage" class="page-img" />
     </div>
   </div>
 
   <div class="controls">
-    <button class="ctrl-btn" id="prevBtn" aria-label="Página anterior">
+    <button class="ctrl-btn" id="prevBtn" aria-label="Anterior">
       <span>‹</span>
     </button>
-    <button class="ctrl-btn" id="nextBtn" aria-label="Página siguiente">
+    <button class="ctrl-btn" id="nextBtn" aria-label="Siguiente">
       <span>›</span>
     </button>
   </div>
 
   <script>
     const TOTAL_PAGES = 34;
-    let currentPage = 1;
 
-    const imgEl = document.getElementById("pageImage");
-    const indicatorEl = document.getElementById("pageIndicator");
+    // currentIndex: página que va a la IZQUIERDA del spread
+    // 1 = portada sola
+    // 2 = (2,3), 4 = (4,5), etc.
+    let currentIndex = 1;
+
+    const leftImg  = document.getElementById("leftPage");
+    const rightImg = document.getElementById("rightPage");
+    const indicator = document.getElementById("pageIndicator");
     const prevBtn = document.getElementById("prevBtn");
     const nextBtn = document.getElementById("nextBtn");
 
@@ -141,41 +158,94 @@
       return `pages/page-${s}.jpg`;
     }
 
-    function updateButtons() {
-      prevBtn.disabled = currentPage === 1;
-      nextBtn.disabled = currentPage === TOTAL_PAGES;
-    }
-
     function updateIndicator() {
-      indicatorEl.textContent = `PÁGINA ${currentPage} / ${TOTAL_PAGES}`;
+      if (currentIndex === 1) {
+        indicator.textContent = `PÁGINA 1 / ${TOTAL_PAGES}`;
+      } else {
+        const right = Math.min(currentIndex + 1, TOTAL_PAGES);
+        indicator.textContent = `PÁGINAS ${currentIndex}–${right} / ${TOTAL_PAGES}`;
+      }
     }
 
-    function showPage(n) {
-      if (n < 1 || n > TOTAL_PAGES) return;
-      currentPage = n;
-      imgEl.style.opacity = "0";
-      const src = pageSrc(currentPage);
-      const tmp = new Image();
-      tmp.onload = () => {
-        imgEl.src = src;
-        imgEl.style.opacity = "1";
-      };
-      tmp.src = src;
-      updateButtons();
+    function updateButtons() {
+      prevBtn.disabled = currentIndex === 1;
+      const maxIndex = (TOTAL_PAGES % 2 === 0) ? TOTAL_PAGES : TOTAL_PAGES - 1;
+      nextBtn.disabled = currentIndex >= maxIndex;
+    }
+
+    function showSpread() {
+      leftImg.style.opacity = "0";
+      rightImg.style.opacity = "0";
+
+      // portada sola
+      if (currentIndex === 1) {
+        leftImg.classList.add("single");
+        rightImg.style.display = "none";
+
+        const tmp = new Image();
+        tmp.onload = () => {
+          leftImg.src = pageSrc(1);
+          leftImg.style.opacity = "1";
+        };
+        tmp.src = pageSrc(1);
+      } else {
+        leftImg.classList.remove("single");
+        rightImg.style.display = "block";
+
+        const leftPageNum = currentIndex;
+        const rightPageNum = Math.min(currentIndex + 1, TOTAL_PAGES);
+
+        const tmpLeft = new Image();
+        const tmpRight = new Image();
+
+        tmpLeft.onload = () => {
+          leftImg.src = pageSrc(leftPageNum);
+          leftImg.style.opacity = "1";
+        };
+        tmpRight.onload = () => {
+          rightImg.src = pageSrc(rightPageNum);
+          rightImg.style.opacity = "1";
+        };
+
+        tmpLeft.src = pageSrc(leftPageNum);
+        tmpRight.src = pageSrc(rightPageNum);
+      }
+
       updateIndicator();
+      updateButtons();
     }
 
-    prevBtn.addEventListener("click", () => showPage(currentPage - 1));
-    nextBtn.addEventListener("click", () => showPage(currentPage + 1));
+    function goNext() {
+      const maxIndex = (TOTAL_PAGES % 2 === 0) ? TOTAL_PAGES : TOTAL_PAGES - 1;
+      if (currentIndex === 1) {
+        if (TOTAL_PAGES >= 2) currentIndex = 2;
+      } else if (currentIndex + 2 <= maxIndex) {
+        currentIndex += 2;
+      }
+      showSpread();
+    }
 
-    // permitir cambiar con teclado
+    function goPrev() {
+      if (currentIndex === 1) return;
+      if (currentIndex === 2) {
+        currentIndex = 1;
+      } else {
+        currentIndex = Math.max(2, currentIndex - 2);
+      }
+      showSpread();
+    }
+
+    prevBtn.addEventListener("click", goPrev);
+    nextBtn.addEventListener("click", goNext);
+
     window.addEventListener("keydown", (e) => {
-      if (e.key === "ArrowRight") showPage(currentPage + 1);
-      if (e.key === "ArrowLeft") showPage(currentPage - 1);
+      if (e.key === "ArrowRight") goNext();
+      if (e.key === "ArrowLeft") goPrev();
     });
 
-    // página inicial
-    showPage(1);
+    // inicio
+    showSpread();
   </script>
 </body>
 </html>
+
