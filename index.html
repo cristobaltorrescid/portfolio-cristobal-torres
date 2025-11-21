@@ -17,7 +17,21 @@
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: #f5f5f5;
     }
-    .book-wrapper {
+    .top-bar {
+      position: fixed;
+      top: 10px;
+      left: 18px;
+      right: 18px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      opacity: 0.7;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .viewer-wrapper {
       position: fixed;
       inset: 0;
       display: flex;
@@ -25,44 +39,22 @@
       justify-content: center;
       background: radial-gradient(circle at top, #222 0, #050505 55%);
     }
-    .book {
-      position: relative;
-      width: min(90vw, 1400px);
+    .page-frame {
+      width: min(90vw, 1200px);
       height: min(90vh, 900px);
-      perspective: 2500px;
-    }
-    .page {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      width: 50%;
-      background: #111;
-      transform-origin: left center;
-      transform-style: preserve-3d;
-      transition: transform 0.7s ease, box-shadow 0.7s ease;
-      box-shadow: 0 0 40px rgba(0,0,0,0.7);
+      background: #101010;
+      box-shadow: 0 0 40px rgba(0,0,0,0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
       overflow: hidden;
-      cursor: pointer;
+      position: relative;
     }
-    .page img {
-      width: 200%;
-      height: 100%;
+    .page-frame img {
+      max-width: 100%;
+      max-height: 100%;
       object-fit: contain;
-      background: #111;
-    }
-    .page.left img {
-      transform: translateX(-50%);
-    }
-    .page.right {
-      left: 50%;
-      transform-origin: right center;
-    }
-    .page.right img {
-      transform: translateX(0);
-    }
-    .page.turned {
-      transform: rotateY(-180deg);
-      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      transition: opacity 0.25s ease;
     }
     .controls {
       position: fixed;
@@ -74,11 +66,11 @@
     }
     .ctrl-btn {
       pointer-events: auto;
-      width: 60px;
-      height: 60px;
+      width: 52px;
+      height: 52px;
       border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.2);
-      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(0,0,0,0.5);
       backdrop-filter: blur(10px);
       display: flex;
       align-items: center;
@@ -90,45 +82,26 @@
     .ctrl-btn span {
       font-size: 26px;
       line-height: 1;
-      opacity: 0.8;
+      opacity: 0.85;
     }
     .ctrl-btn:hover {
-      background: rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.1);
       transform: translateY(-1px);
-      border-color: rgba(255,255,255,0.4);
+      border-color: rgba(255,255,255,0.45);
     }
-    .top-bar {
-      position: fixed;
-      top: 12px;
-      left: 18px;
-      right: 18px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 12px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      opacity: 0.7;
-      pointer-events: none;
-    }
-    .top-bar > div { pointer-events: auto; }
-    .page-indicator {
-      font-feature-settings: "tnum" 1, "lnum" 1;
+    .ctrl-btn:disabled {
+      opacity: 0.3;
+      cursor: default;
+      transform: none;
     }
     @media (max-width: 768px) {
-      .book {
-        width: min(100vw, 700px);
-        height: min(100vh, 900px);
+      .page-frame {
+        width: 100vw;
+        height: 100vh;
+        border-radius: 0;
       }
-      .page {
-        width: 100%;
-      }
-      .page.left {
-        display: none;
-      }
-      .page.right {
-        left: 0;
-        transform-origin: left center;
+      .ctrl-btn {
+        margin: 0 10px;
       }
     }
   </style>
@@ -136,11 +109,13 @@
 <body>
   <div class="top-bar">
     <div>PORTAFOLIO · CRISTÓBAL TORRES</div>
-    <div class="page-indicator" id="pageIndicator">PÁGINA 1</div>
+    <div id="pageIndicator">PÁGINA 1 / 34</div>
   </div>
 
-  <div class="book-wrapper">
-    <div class="book" id="book"></div>
+  <div class="viewer-wrapper">
+    <div class="page-frame">
+      <img id="pageImage" src="" alt="Página del portafolio" />
+    </div>
   </div>
 
   <div class="controls">
@@ -153,90 +128,54 @@
   </div>
 
   <script>
-    // TOTAL DE PÁGINAS DEL PORTAFOLIO
     const TOTAL_PAGES = 34;
-
-    // Ruta de cada imagen de página
-    function pageSrc(pageNumber) {
-      const n = String(pageNumber).padStart(2, "0");
-      return `pages/page-${n}.jpg`;
-    }
-
-    const book = document.getElementById("book");
-    const indicator = document.getElementById("pageIndicator");
     let currentPage = 1;
 
-    // Crear páginas
-    for (let i = 1; i <= TOTAL_PAGES; i++) {
-      const page = document.createElement("div");
-      page.classList.add("page");
-      page.dataset.page = i;
+    const imgEl = document.getElementById("pageImage");
+    const indicatorEl = document.getElementById("pageIndicator");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
 
-      const img = document.createElement("img");
-      img.src = pageSrc(i);
-      img.alt = `Página ${i}`;
-
-      page.appendChild(img);
-      book.appendChild(page);
+    function pageSrc(n) {
+      const s = String(n).padStart(2, "0");
+      return `pages/page-${s}.jpg`;
     }
 
-    function layoutPages() {
-      const pages = Array.from(document.querySelectorAll(".page"));
-      const isMobile = window.matchMedia("(max-width: 768px)").matches;
-
-      pages.forEach(page => {
-        const n = parseInt(page.dataset.page, 10);
-        page.classList.remove("left", "right");
-
-        if (isMobile) {
-          page.style.zIndex = TOTAL_PAGES - n;
-          page.style.left = "0";
-          page.classList.add("right");
-        } else {
-          if (n % 2 === 1) {
-            page.classList.add("left");
-            page.style.left = "0";
-          } else {
-            page.classList.add("right");
-            page.style.left = "50%";
-          }
-          page.style.zIndex = TOTAL_PAGES - n;
-        }
-      });
+    function updateButtons() {
+      prevBtn.disabled = currentPage === 1;
+      nextBtn.disabled = currentPage === TOTAL_PAGES;
     }
 
     function updateIndicator() {
-      indicator.textContent = `PÁGINA ${currentPage}`;
+      indicatorEl.textContent = `PÁGINA ${currentPage} / ${TOTAL_PAGES}`;
     }
 
-    function turnNext() {
-      if (currentPage >= TOTAL_PAGES) return;
-      const pages = Array.from(document.querySelectorAll(".page"));
-      const target = pages.find(p => parseInt(p.dataset.page,10) === currentPage);
-      if (target) {
-        target.classList.add("turned");
-        currentPage = Math.min(currentPage + 1, TOTAL_PAGES);
-        updateIndicator();
-      }
+    function showPage(n) {
+      if (n < 1 || n > TOTAL_PAGES) return;
+      currentPage = n;
+      imgEl.style.opacity = "0";
+      const src = pageSrc(currentPage);
+      const tmp = new Image();
+      tmp.onload = () => {
+        imgEl.src = src;
+        imgEl.style.opacity = "1";
+      };
+      tmp.src = src;
+      updateButtons();
+      updateIndicator();
     }
 
-    function turnPrev() {
-      if (currentPage <= 1) return;
-      const pages = Array.from(document.querySelectorAll(".page"));
-      const target = pages.find(p => parseInt(p.dataset.page,10) === currentPage - 1);
-      if (target) {
-        target.classList.remove("turned");
-        currentPage = Math.max(currentPage - 1, 1);
-        updateIndicator();
-      }
-    }
+    prevBtn.addEventListener("click", () => showPage(currentPage - 1));
+    nextBtn.addEventListener("click", () => showPage(currentPage + 1));
 
-    document.getElementById("nextBtn").addEventListener("click", turnNext);
-    document.getElementById("prevBtn").addEventListener("click", turnPrev);
-    window.addEventListener("resize", layoutPages);
+    // permitir cambiar con teclado
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight") showPage(currentPage + 1);
+      if (e.key === "ArrowLeft") showPage(currentPage - 1);
+    });
 
-    layoutPages();
-    updateIndicator();
+    // página inicial
+    showPage(1);
   </script>
 </body>
 </html>
