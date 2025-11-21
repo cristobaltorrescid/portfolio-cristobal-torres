@@ -50,10 +50,9 @@
       align-items: center;
       justify-content: center;
       background: radial-gradient(circle at top, #222 0, #050505 60%);
-      overflow: auto; /* necesario para desplazarse cuando hay zoom */
     }
 
-    /* Contenedor que usa la librería para el flipbook */
+    /* Contenedor del libro */
     #flipbook {
       width: min(95vw, 1400px);
       height: min(90vh, 900px);
@@ -64,27 +63,20 @@
       transition: transform 0.15s ease-out;
     }
 
-    /* Ajustes finos internos del libro */
-
-    /* Fondo del libro igual al fondo global para que desaparezcan barras raras */
+    /* Ajuste MUY SUAVE para que no haya tanto espacio interno */
     .stf__wrapper {
-      background: #050505 !important;
       padding: 0 !important;
+      background: #050505;
     }
 
-    /* Quitar márgenes entre páginas: que queden lo más juntas posible */
-    .stf__item {
-      margin: 0 !important;
-    }
-
-    /* Quitar borde/sombra dura de cada página (dejamos solo la del “lomo”) */
-    .stf__page {
-      box-shadow: none !important;
-    }
-
-    /* “Lomo” con sombra casi transparente (D1) */
+    /* Lomo muy suave (casi transparente) */
     .stf__inner-shadow {
-      opacity: 0.05 !important; /* casi transparente */
+      opacity: 0.05;
+    }
+
+    /* Pequeña reducción de separación entre páginas */
+    .stf__item {
+      margin: 0 2px;
     }
 
     .controls {
@@ -169,31 +161,30 @@
 
   <script>
     document.addEventListener("DOMContentLoaded", function () {
-      const TOTAL_PAGES = 34; // si cambias el portafolio, modifica aquí
+      const TOTAL_PAGES = 34; // cambia esto si tu PDF tiene otro número
 
       const indicator = document.getElementById("pageIndicator");
       const prevBtn = document.getElementById("prevBtn");
       const nextBtn = document.getElementById("nextBtn");
-
       const flipbookElement = document.getElementById("flipbook");
       const wrapper = document.querySelector(".viewer-wrapper");
 
-      // Crear instancia de PageFlip
+      // 1. Instancia del libro
       const pageFlip = new St.PageFlip(flipbookElement, {
-        width: 900, // tamaño base, luego se adapta
+        width: 900,
         height: 600,
-        size: "stretch", // se ajusta al contenedor
+        size: "stretch",
         minWidth: 315,
         maxWidth: 2000,
         minHeight: 420,
         maxHeight: 2533,
         autoSize: true,
-        showCover: true, // portada sola
-        maxShadowOpacity: 0.15, // sombra general suave
-        mobileScrollSupport: false // evita scroll accidental en móvil
+        showCover: true,        // portada sola
+        maxShadowOpacity: 0.15, // sombra suave
+        mobileScrollSupport: false
       });
 
-      // Generar automáticamente el listado de imágenes
+      // 2. Cargar imágenes: pages/page-01.jpg ... page-34.jpg
       const images = [];
       for (let i = 1; i <= TOTAL_PAGES; i++) {
         const num = String(i).padStart(2, "0");
@@ -202,13 +193,12 @@
 
       pageFlip.loadFromImages(images);
 
+      // 3. Actualizar indicador y botones
       function updateIndicator() {
-        // Índice interno desde 0
-        const pageIndex = pageFlip.getCurrentPageIndex();
+        const pageIndex = pageFlip.getCurrentPageIndex(); // 0-based
         const humanPage = pageIndex + 1;
         indicator.textContent = `PÁGINA ${humanPage} / ${TOTAL_PAGES}`;
 
-        // Habilitar / deshabilitar botones según posición
         prevBtn.disabled = pageIndex === 0;
         nextBtn.disabled = humanPage >= TOTAL_PAGES;
       }
@@ -216,33 +206,22 @@
       pageFlip.on("init", updateIndicator);
       pageFlip.on("flip", updateIndicator);
 
-      // Botones
-      prevBtn.addEventListener("click", () => {
-        pageFlip.flipPrev();
-      });
+      // 4. Navegación con botones
+      prevBtn.addEventListener("click", () => pageFlip.flipPrev());
+      nextBtn.addEventListener("click", () => pageFlip.flipNext());
 
-      nextBtn.addEventListener("click", () => {
-        pageFlip.flipNext();
-      });
-
-      // Navegación con teclado
+      // 5. Navegación con teclado
       window.addEventListener("keydown", (e) => {
-        if (e.key === "ArrowRight") {
-          pageFlip.flipNext();
-        } else if (e.key === "ArrowLeft") {
-          pageFlip.flipPrev();
-        }
+        if (e.key === "ArrowRight") pageFlip.flipNext();
+        if (e.key === "ArrowLeft") pageFlip.flipPrev();
       });
 
-      // ----------------------
-      // ZOOM con la ruedita
-      // ----------------------
+      // 6. Zoom con la ruedita (simple, sin scroll)
       let scale = 1;
 
       wrapper.addEventListener(
         "wheel",
         (e) => {
-          // Usamos SIEMPRE la ruedita para zoom (sin Ctrl)
           e.preventDefault();
 
           const delta = e.deltaY > 0 ? -0.1 : 0.1;
@@ -257,3 +236,4 @@
   </script>
 </body>
 </html>
+
