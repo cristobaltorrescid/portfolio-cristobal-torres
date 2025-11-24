@@ -13,7 +13,7 @@
         html, body {
             height: 100%;
             background: #050505;
-            overflow: hidden;
+            overflow: hidden; /* Mantiene la barra de scroll de la página oculta */
             font-family: system-ui, sans-serif;
             color: #eee;
         }
@@ -48,6 +48,10 @@
             box-shadow: 0 0 40px rgba(0,0,0,.75);
             border-radius: 4px;
             overflow: hidden;
+            /* --- CSS PARA ZOOM --- */
+            transition: transform 0.2s ease-out; /* Transición suave del zoom */
+            transform-origin: center center; /* El zoom se centra en el medio del libro */
+            cursor: grab; /* Indica que el elemento puede ser arrastrado/paneado si se implementa */
         }
 
         /* Fondo interno del libro */
@@ -61,11 +65,11 @@
             opacity: 0.03 !important;
         }
 
-        /* --- CORRECCIÓN CLAVE CSS: Asegurar la proporción de la imagen --- */
+        /* Asegurar la proporción de la imagen */
         .stf__block img {
             width: 100%; 
             height: 100%; 
-            object-fit: contain; /* Mantiene el aspect ratio */
+            object-fit: contain; 
             background-color: #050505; 
         }
 
@@ -134,19 +138,21 @@
 
             const TOTAL = 34;
             const indicator = document.getElementById("pageIndicator");
+            const flipbookElement = document.getElementById("flipbook");
 
-            // --- CORRECCIÓN CLAVE JS: Relación de aspecto vertical (600x900) ---
-            const flip = new St.PageFlip(document.getElementById("flipbook"), {
+            // --- CONFIGURACIÓN DE PAGEFLIP ---
+            const flip = new St.PageFlip(flipbookElement, {
                 width: 600,  
                 height: 900, 
                 size: "stretch",
                 maxShadowOpacity: 0.1,
                 showCover: true,
                 autoSize: true,
+                // **IMPORTANTE**: Deshabilita el soporte de scroll del móvil
                 mobileScrollSupport: false
             });
 
-            // Cargar imágenes (Se mantiene la nomenclatura original con guion '-')
+            // Cargar imágenes
             const images = [];
             for (let i = 1; i <= TOTAL; i++) {
                 images.push(`pages/page-${String(i).padStart(2,"0")}.jpg`); 
@@ -171,6 +177,39 @@
                 if (e.key === "ArrowRight") flip.flipNext();
                 if (e.key === "ArrowLeft") flip.flipPrev();
             });
+
+            // ==========================================================
+            // === FUNCIONALIDAD DE ZOOM CON RUEDITA (SCROLL) ===
+            // ==========================================================
+
+            let currentScale = 1;
+            const SCALE_STEP = 0.2;
+            const MAX_SCALE = 3;
+            const MIN_SCALE = 1;
+
+            window.addEventListener('wheel', (e) => {
+                e.preventDefault(); // Evita el scroll de toda la página
+
+                const direction = e.deltaY > 0 ? -1 : 1; // Dirección del scroll: 1 para zoom in, -1 para zoom out
+
+                // Calcular la nueva escala
+                let newScale = currentScale + (direction * SCALE_STEP);
+                
+                // Limitar la escala
+                newScale = Math.min(Math.max(MIN_SCALE, newScale), MAX_SCALE);
+
+                // Aplicar la escala al elemento del libro
+                flipbookElement.style.transform = `scale(${newScale})`;
+                currentScale = newScale;
+
+                // Si se hace zoom in (currentScale > 1), debes permitir el scroll en el body
+                // para panear el contenido, sino el contenido ampliado queda fijo.
+                if (currentScale > 1) {
+                    document.body.style.overflow = 'auto';
+                } else {
+                    document.body.style.overflow = 'hidden';
+                }
+            }, { passive: false }); // Usar passive: false para que e.preventDefault() funcione
 
         });
     </script>
