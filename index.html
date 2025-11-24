@@ -61,15 +61,13 @@
             opacity: 0.03 !important;
         }
 
-        /* --- CORRECCIÓN CLAVE 2: Asegurar la proporción de la imagen --- */
+        /* --- CORRECCIÓN CLAVE CSS: Asegurar la proporción de la imagen --- */
         .stf__block img {
             width: 100%; 
             height: 100%; 
-            /* Mantiene la proporción de la imagen dentro del contenedor de la página */
-            object-fit: contain; 
-            background-color: #050505; /* Rellena los espacios vacíos con el fondo */
+            object-fit: contain; /* Mantiene el aspect ratio */
+            background-color: #050505; 
         }
-        /* ------------------------------------------------------------- */
 
         /* Botones */
         .controls {
@@ -137,10 +135,10 @@
             const TOTAL = 34;
             const indicator = document.getElementById("pageIndicator");
 
-            // --- CORRECCIÓN CLAVE 1: Relación de aspecto vertical (ej: 600x900) ---
+            // --- CORRECCIÓN CLAVE JS: Relación de aspecto vertical (600x900) ---
             const flip = new St.PageFlip(document.getElementById("flipbook"), {
-                width: 600,  // Ancho de una sola página (menor que el alto para vertical)
-                height: 900, // Alto de una sola página
+                width: 600,  
+                height: 900, 
                 size: "stretch",
                 maxShadowOpacity: 0.1,
                 showCover: true,
@@ -148,12 +146,10 @@
                 mobileScrollSupport: false
             });
 
-            // Cargar imágenes
+            // Cargar imágenes (Se mantiene la nomenclatura original con guion '-')
             const images = [];
             for (let i = 1; i <= TOTAL; i++) {
-                // --- CORRECCIÓN CLAVE 3: Nomenclatura de archivos ---
-                // Se ajusta la ruta para que coincida con tus archivos en GitHub (ej: pages/page_01.jpg)
-                images.push(`pages/page_${String(i).padStart(2,"0")}.jpg`); 
+                images.push(`pages/page-${String(i).padStart(2,"0")}.jpg`); 
             }
 
             flip.loadFromImages(images);
