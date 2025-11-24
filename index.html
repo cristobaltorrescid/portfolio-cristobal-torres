@@ -40,10 +40,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow-x: hidden; /* Aseguramos que no haya scroll horizontal no deseado */
         }
 
         /* Contenedor del libro */
         #flipbook {
+            /* En escritorio, se ajusta al tamaño de la ventana */
             width: min(95vw, 1500px); 
             height: min(90vh, 900px);
             background: #050505;
@@ -155,11 +157,10 @@
             
             #flipbook {
                 box-shadow: none;
-                /* Ocupa todo el ancho y calcula la altura para mantener la proporción 600:900 */
-                width: 100vw; 
-                height: calc(100vw * (900 / 600)); 
+                /* CAMBIO: En móvil, el contenedor del libro usa 95% del viewport para dejar espacio */
+                width: 95vw; 
+                height: calc(95vw * (900 / 600)); /* La altura se ajusta por proporción */
                 max-height: 90vh;
-                /* IMPORTANTE: Usamos 'none' para que ocupe el espacio sin transformaciones adicionales */
                 transform: none !important; 
                 transform-origin: center center;
                 margin: auto; 
@@ -212,7 +213,12 @@
                 showCover: true,
                 autoSize: true,
                 // Si es táctil, permitimos el swipe (mobileScrollSupport: true)
-                mobileScrollSupport: isTouchDevice 
+                mobileScrollSupport: isTouchDevice,
+                
+                // === CAMBIO CRÍTICO: FUERZA VISTA DE UNA SOLA PÁGINA EN MÓVILES ===
+                // Si el ancho del contenedor es menor a 800px, solo muestra una página.
+                minWidth: 800, 
+                minHeight: 800, 
             });
 
             // Cargar imágenes
