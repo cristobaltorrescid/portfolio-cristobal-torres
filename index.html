@@ -13,7 +13,7 @@
         html, body {
             height: 100%;
             background: #050505;
-            overflow: hidden; /* Oculta la barra de scroll principal inicialmente */
+            overflow: hidden; 
             font-family: system-ui, sans-serif;
             color: #eee;
         }
@@ -117,6 +117,42 @@
             color: white;
             opacity: .85;
         }
+        
+        /* ======================================= */
+        /* === AJUSTES RESPONSIVOS (MEDIA QUERIES) === */
+        /* ======================================= */
+
+        /* Escritorio/Laptop (Elementos más pequeños) */
+        @media (max-width: 1200px) {
+            .ctrl-btn {
+                width: 45px; 
+                height: 45px; 
+                margin: 0 20px; 
+            }
+            .ctrl-btn span {
+                font-size: 22px; 
+            }
+        }
+
+        /* Móviles (Ocultar botones de flecha y barra superior) */
+        @media (max-width: 768px) {
+            .top-bar {
+                display: none;
+            }
+            .controls {
+                display: none;
+            }
+            
+            #flipbook {
+                box-shadow: none;
+            }
+            
+            /* Forzar mejor calidad de imagen en móviles */
+            .stf__block img {
+                -webkit-filter: blur(0);
+                filter: blur(0);
+            }
+        }
 
     </style>
 </head>
@@ -146,7 +182,10 @@
             const indicator = document.getElementById("pageIndicator");
             const flipbookElement = document.getElementById("flipbook");
 
-            // --- CONFIGURACIÓN DE PAGEFLIP (Relación Vertical 600x900) ---
+            // --- DETECCIÓN DE DISPOSITIVO TÁCTIL ---
+            const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
+
+            // --- CONFIGURACIÓN DE PAGEFLIP ---
             const flip = new St.PageFlip(flipbookElement, {
                 width: 600,  
                 height: 900, 
@@ -154,10 +193,11 @@
                 maxShadowOpacity: 0.1,
                 showCover: true,
                 autoSize: true,
-                mobileScrollSupport: false
+                // Si es táctil, permitimos el swipe (mobileScrollSupport: true)
+                mobileScrollSupport: isTouchDevice 
             });
 
-            // Cargar imágenes (Nomenclatura correcta: page-01.jpg)
+            // Cargar imágenes
             const images = [];
             for (let i = 1; i <= TOTAL; i++) {
                 images.push(`pages/page-${String(i).padStart(2,"0")}.jpg`); 
@@ -184,80 +224,77 @@
             });
 
             // ==========================================================
-            // === FUNCIONALIDAD DE ZOOM FOCAL Y PANEO (Arrastre) ===
+            // === FUNCIONALIDAD DE ZOOM FOCAL Y PANEO (SOLO ESCRITORIO) ===
             // ==========================================================
+            
+            if (!isTouchDevice) {
+                let currentScale = 1;
+                const SCALE_STEP = 0.15;
+                const MAX_SCALE = 3;
+                const MIN_SCALE = 1;
 
-            let currentScale = 1;
-            const SCALE_STEP = 0.15;
-            const MAX_SCALE = 3;
-            const MIN_SCALE = 1;
+                // 1. Manejo del Zoom (Scroll con Ruedita)
+                flipbookElement.addEventListener('wheel', (e) => {
+                    e.preventDefault(); 
+                    const direction = e.deltaY < 0 ? 1 : -1; 
+                    let newScale = currentScale + (direction * SCALE_STEP);
+                    newScale = Math.min(Math.max(MIN_SCALE, newScale), MAX_SCALE);
 
-            // 1. Manejo del Zoom (Scroll con Ruedita)
-            flipbookElement.addEventListener('wheel', (e) => {
-                e.preventDefault(); 
+                    if (newScale === currentScale) return;
 
-                // Determina la dirección
-                const direction = e.deltaY < 0 ? 1 : -1; 
-                
-                let newScale = currentScale + (direction * SCALE_STEP);
-                newScale = Math.min(Math.max(MIN_SCALE, newScale), MAX_SCALE);
+                    // CÁLCULO DEL PUNTO FOCAL
+                    const rect = flipbookElement.getBoundingClientRect();
+                    const xPercent = ((e.clientX - rect.left) / rect.width) * 100;
+                    const yPercent = ((e.clientY - rect.top) / rect.height) * 100;
+                    
+                    flipbookElement.style.transformOrigin = `${xPercent}% ${yPercent}%`;
+                    flipbookElement.style.transform = `scale(${newScale})`;
+                    currentScale = newScale;
 
-                if (newScale === currentScale) return;
+                    // Actualiza el cursor y el scroll de la página para el paneo
+                    if (currentScale > 1) {
+                        flipbookElement.style.cursor = 'grab';
+                        document.body.style.overflow = 'auto'; 
+                    } else {
+                        flipbookElement.style.cursor = 'default';
+                        document.body.style.overflow = 'hidden'; 
+                    }
 
-                // CÁLCULO DEL PUNTO FOCAL (Se centra en el cursor)
-                const rect = flipbookElement.getBoundingClientRect();
-                const xPercent = ((e.clientX - rect.left) / rect.width) * 100;
-                const yPercent = ((e.clientY - rect.top) / rect.height) * 100;
-                
-                // Aplica el origen y la escala
-                flipbookElement.style.transformOrigin = `${xPercent}% ${yPercent}%`;
-                flipbookElement.style.transform = `scale(${newScale})`;
-                currentScale = newScale;
-
-                // Actualiza el cursor y el scroll de la página para el paneo
-                if (currentScale > 1) {
-                    flipbookElement.style.cursor = 'grab';
-                    document.body.style.overflow = 'auto'; 
-                } else {
-                    flipbookElement.style.cursor = 'default';
-                    document.body.style.overflow = 'hidden'; 
-                }
-
-            }, { passive: false }); 
+                }, { passive: false }); 
 
 
-            // 2. Manejo del Paneo (Arrastre con Mouse)
-            let isPanning = false;
-            let startX, startY, scrollLeft, scrollTop;
+                // 2. Manejo del Paneo (Arrastre con Mouse)
+                let isPanning = false;
+                let startX, startY, scrollLeft, scrollTop;
 
-            flipbookElement.addEventListener('mousedown', (e) => {
-                if (currentScale > 1) {
-                    isPanning = true;
-                    flipbookElement.style.cursor = 'grabbing';
-                    startX = e.clientX;
-                    startY = e.clientY;
-                    scrollLeft = window.scrollX;
-                    scrollTop = window.scrollY;
-                }
-            });
+                flipbookElement.addEventListener('mousedown', (e) => {
+                    if (currentScale > 1) {
+                        isPanning = true;
+                        flipbookElement.style.cursor = 'grabbing';
+                        startX = e.clientX;
+                        startY = e.clientY;
+                        scrollLeft = window.scrollX;
+                        scrollTop = window.scrollY;
+                    }
+                });
 
-            window.addEventListener('mouseup', () => {
-                isPanning = false;
-                if (currentScale > 1) {
-                    flipbookElement.style.cursor = 'grab';
-                }
-            });
+                window.addEventListener('mouseup', () => {
+                    isPanning = false;
+                    if (currentScale > 1) {
+                        flipbookElement.style.cursor = 'grab';
+                    }
+                });
 
-            window.addEventListener('mousemove', (e) => {
-                if (!isPanning || currentScale <= 1) return;
-                e.preventDefault();
-                
-                const dx = e.clientX - startX;
-                const dy = e.clientY - startY;
+                window.addEventListener('mousemove', (e) => {
+                    if (!isPanning || currentScale <= 1) return;
+                    e.preventDefault();
+                    
+                    const dx = e.clientX - startX;
+                    const dy = e.clientY - startY;
 
-                // Simula el paneo moviendo la ventana de visualización
-                window.scrollTo(scrollLeft - dx, scrollTop - dy);
-            });
+                    window.scrollTo(scrollLeft - dx, scrollTop - dy);
+                });
+            }
 
         });
     </script>
