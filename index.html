@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <title>Portafolio | Cristóbal Torres</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /> 
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
 
@@ -54,13 +54,18 @@
             transition: transform 0.2s ease-out;
             transform-origin: center center; 
             cursor: default; 
+            perspective: 2000px; /* Aceleración 3D */
         }
 
         /* Fondo interno del libro */
         .stf__wrapper { background: #050505 !important; }
 
-        /* Páginas muy juntas */
-        .stf__item { margin: 0 2.5px !important; }
+        /* Páginas individuales - CRÍTICO para aceleración y calidad en móvil */
+        .stf__item { 
+            margin: 0 2.5px !important; 
+            -webkit-transform: translateZ(0); 
+            transform: translateZ(0); 
+        }
 
         /* Lomo del libro */
         .stf__inner-shadow {
@@ -77,9 +82,11 @@
             /* Mejoras de calidad visual al renderizar */
             image-rendering: optimizeQuality;
             -ms-interpolation-mode: bicubic;
-            -webkit-transform: translateZ(0) scale(1.0); /* Pequeño truco para iOS */
+            
+            /* Forzar alta calidad al escalar */
+            -webkit-transform: translateZ(0) scale(1.0); 
             transform: translateZ(0) scale(1.0);
-            backface-visibility: hidden; /* Evita parpadeos en transformaciones */
+            backface-visibility: hidden;
         }
 
         /* Botones */
@@ -148,15 +155,14 @@
             
             #flipbook {
                 box-shadow: none;
-                /* --- AVISO IMPORTANTE: ESCALADO PARA QUE EL LIBRO QUEDE COMPLETO EN PANTALLA --- */
-                /* Calcula la escala necesaria para que un libro de 600x900px quepa en el viewport */
-                /* Asegura que no se corte por los lados */
-                width: 100vw; /* El ancho del libro toma el 100% del viewport */
-                height: calc(100vw * (900 / 600)); /* La altura se calcula manteniendo la proporción vertical */
-                max-height: 90vh; /* Que no exceda el 90% de la altura de la pantalla */
-                transform: scale(0.9); /* Opcional: una pequeña escala extra para dar aire */
+                /* Ocupa todo el ancho y calcula la altura para mantener la proporción 600:900 */
+                width: 100vw; 
+                height: calc(100vw * (900 / 600)); 
+                max-height: 90vh;
+                /* IMPORTANTE: Usamos 'none' para que ocupe el espacio sin transformaciones adicionales */
+                transform: none !important; 
                 transform-origin: center center;
-                margin: auto; /* Centra el libro si hay espacio */
+                margin: auto; 
             }
             
             /* Forzar mejor calidad de imagen en móviles */
