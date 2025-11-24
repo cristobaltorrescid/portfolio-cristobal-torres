@@ -40,12 +40,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow-x: hidden; /* Aseguramos que no haya scroll horizontal no deseado */
+            overflow-x: hidden; 
         }
 
         /* Contenedor del libro */
         #flipbook {
-            /* En escritorio, se ajusta al tamaño de la ventana */
             width: min(95vw, 1500px); 
             height: min(90vh, 900px);
             background: #050505;
@@ -56,7 +55,7 @@
             transition: transform 0.2s ease-out;
             transform-origin: center center; 
             cursor: default; 
-            perspective: 2000px; /* Aceleración 3D */
+            perspective: 2000px; 
         }
 
         /* Fondo interno del libro */
@@ -157,9 +156,9 @@
             
             #flipbook {
                 box-shadow: none;
-                /* CAMBIO: En móvil, el contenedor del libro usa 95% del viewport para dejar espacio */
+                /* El libro ocupa el 95% del ancho y la altura se calcula para mantener la proporción */
                 width: 95vw; 
-                height: calc(95vw * (900 / 600)); /* La altura se ajusta por proporción */
+                height: calc(95vw * (900 / 600)); 
                 max-height: 90vh;
                 transform: none !important; 
                 transform-origin: center center;
@@ -215,10 +214,13 @@
                 // Si es táctil, permitimos el swipe (mobileScrollSupport: true)
                 mobileScrollSupport: isTouchDevice,
                 
-                // === CAMBIO CRÍTICO: FUERZA VISTA DE UNA SOLA PÁGINA EN MÓVILES ===
-                // Si el ancho del contenedor es menor a 800px, solo muestra una página.
-                minWidth: 800, 
-                minHeight: 800, 
+                // === SOLUCIÓN FINAL: FUERZA VISTA DE UNA SOLA PÁGINA EN MÓVILES ===
+                // Estos valores bajos son el "mínimo" para que el libro se muestre.
+                minWidth: 100, 
+                minHeight: 100, 
+                
+                // Si el ancho de la ventana es menor a 800px, fuerza el modo de página única.
+                flippingPageOnly: window.innerWidth < 800,
             });
 
             // Cargar imágenes
