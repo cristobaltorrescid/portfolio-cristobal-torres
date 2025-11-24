@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8" />
     <title>Portafolio | Cristóbal Torres</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/css/page-flip.min.css" />
     
@@ -75,8 +77,9 @@
             /* Mejoras de calidad visual al renderizar */
             image-rendering: optimizeQuality;
             -ms-interpolation-mode: bicubic;
-            -webkit-transform: translateZ(0); 
-            transform: translateZ(0);
+            -webkit-transform: translateZ(0) scale(1.0); /* Pequeño truco para iOS */
+            transform: translateZ(0) scale(1.0);
+            backface-visibility: hidden; /* Evita parpadeos en transformaciones */
         }
 
         /* Botones */
@@ -134,7 +137,7 @@
             }
         }
 
-        /* Móviles (Ocultar botones de flecha y barra superior) */
+        /* Móviles (Ocultar botones y barra superior, escalar libro) */
         @media (max-width: 768px) {
             .top-bar {
                 display: none;
@@ -145,6 +148,15 @@
             
             #flipbook {
                 box-shadow: none;
+                /* --- AVISO IMPORTANTE: ESCALADO PARA QUE EL LIBRO QUEDE COMPLETO EN PANTALLA --- */
+                /* Calcula la escala necesaria para que un libro de 600x900px quepa en el viewport */
+                /* Asegura que no se corte por los lados */
+                width: 100vw; /* El ancho del libro toma el 100% del viewport */
+                height: calc(100vw * (900 / 600)); /* La altura se calcula manteniendo la proporción vertical */
+                max-height: 90vh; /* Que no exceda el 90% de la altura de la pantalla */
+                transform: scale(0.9); /* Opcional: una pequeña escala extra para dar aire */
+                transform-origin: center center;
+                margin: auto; /* Centra el libro si hay espacio */
             }
             
             /* Forzar mejor calidad de imagen en móviles */
