@@ -48,10 +48,10 @@
             box-shadow: 0 0 40px rgba(0,0,0,.75);
             border-radius: 4px;
             overflow: hidden;
-            /* --- CSS para Zoom/Panning --- */
+            /* Propiedades necesarias para el Zoom y Paneo */
             transition: transform 0.2s ease-out;
-            transform-origin: center center; /* Se ajusta con JS, pero este es el valor inicial */
-            cursor: default; /* Se ajusta a 'grab' en JS cuando hay zoom */
+            transform-origin: center center; 
+            cursor: default; 
         }
 
         /* Fondo interno del libro */
@@ -65,12 +65,18 @@
             opacity: 0.03 !important;
         }
 
-        /* Asegurar la proporción de la imagen (corrección de estiramiento) */
+        /* Asegurar la proporción y Mejorar Calidad Visual */
         .stf__block img {
             width: 100%; 
             height: 100%; 
-            object-fit: contain; /* Mantiene el aspect ratio */
+            object-fit: contain; 
             background-color: #050505; 
+            
+            /* Mejoras de calidad visual al renderizar */
+            image-rendering: optimizeQuality;
+            -ms-interpolation-mode: bicubic;
+            -webkit-transform: translateZ(0); 
+            transform: translateZ(0);
         }
 
         /* Botones */
@@ -140,7 +146,7 @@
             const indicator = document.getElementById("pageIndicator");
             const flipbookElement = document.getElementById("flipbook");
 
-            // --- CONFIGURACIÓN DE PAGEFLIP (Relación Vertical) ---
+            // --- CONFIGURACIÓN DE PAGEFLIP (Relación Vertical 600x900) ---
             const flip = new St.PageFlip(flipbookElement, {
                 width: 600,  
                 height: 900, 
@@ -151,7 +157,7 @@
                 mobileScrollSupport: false
             });
 
-            // Cargar imágenes (Nomenclatura con guion '-'): pages/page-01.jpg
+            // Cargar imágenes (Nomenclatura correcta: page-01.jpg)
             const images = [];
             for (let i = 1; i <= TOTAL; i++) {
                 images.push(`pages/page-${String(i).padStart(2,"0")}.jpg`); 
@@ -186,11 +192,11 @@
             const MAX_SCALE = 3;
             const MIN_SCALE = 1;
 
-            // 1. Manejo del Zoom (Scroll)
+            // 1. Manejo del Zoom (Scroll con Ruedita)
             flipbookElement.addEventListener('wheel', (e) => {
                 e.preventDefault(); 
 
-                // Determina la dirección del scroll: 1 para zoom in (rueda hacia arriba), -1 para zoom out
+                // Determina la dirección
                 const direction = e.deltaY < 0 ? 1 : -1; 
                 
                 let newScale = currentScale + (direction * SCALE_STEP);
@@ -198,32 +204,29 @@
 
                 if (newScale === currentScale) return;
 
-                // --- CÁLCULO DEL PUNTO FOCAL ---
+                // CÁLCULO DEL PUNTO FOCAL (Se centra en el cursor)
                 const rect = flipbookElement.getBoundingClientRect();
-                // Calcula la posición del cursor (relativa al libro) en porcentajes
                 const xPercent = ((e.clientX - rect.left) / rect.width) * 100;
                 const yPercent = ((e.clientY - rect.top) / rect.height) * 100;
                 
-                // Aplica el origen de la transformación en la posición del cursor
+                // Aplica el origen y la escala
                 flipbookElement.style.transformOrigin = `${xPercent}% ${yPercent}%`;
-                
-                // Aplica la escala
                 flipbookElement.style.transform = `scale(${newScale})`;
                 currentScale = newScale;
 
-                // Actualiza el cursor y el scroll de la página para permitir panear (arrastrar)
+                // Actualiza el cursor y el scroll de la página para el paneo
                 if (currentScale > 1) {
                     flipbookElement.style.cursor = 'grab';
-                    document.body.style.overflow = 'auto'; // Habilita el scroll de la página para el paneo
+                    document.body.style.overflow = 'auto'; 
                 } else {
                     flipbookElement.style.cursor = 'default';
-                    document.body.style.overflow = 'hidden'; // Oculta el scroll cuando no hay zoom
+                    document.body.style.overflow = 'hidden'; 
                 }
 
             }, { passive: false }); 
 
 
-            // 2. Manejo del Paneo (Arrastre)
+            // 2. Manejo del Paneo (Arrastre con Mouse)
             let isPanning = false;
             let startX, startY, scrollLeft, scrollTop;
 
@@ -231,7 +234,6 @@
                 if (currentScale > 1) {
                     isPanning = true;
                     flipbookElement.style.cursor = 'grabbing';
-                    // Guarda la posición inicial del cursor y el desplazamiento actual de la ventana
                     startX = e.clientX;
                     startY = e.clientY;
                     scrollLeft = window.scrollX;
@@ -250,11 +252,10 @@
                 if (!isPanning || currentScale <= 1) return;
                 e.preventDefault();
                 
-                // Calcula cuánto se ha movido el ratón
                 const dx = e.clientX - startX;
                 const dy = e.clientY - startY;
 
-                // Mueve la ventana al desplazar (simulando el paneo del libro ampliado)
+                // Simula el paneo moviendo la ventana de visualización
                 window.scrollTo(scrollLeft - dx, scrollTop - dy);
             });
 
